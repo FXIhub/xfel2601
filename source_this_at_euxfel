@@ -1,6 +1,14 @@
 #!/bin/bash
-module load exfel exfel_anaconda3 
+
+SHARED_FOLDER=/gpfs/exfel/exp/SQS/202131/p900210/usr/Shared
+
+# Load modules and environment
+#module load exfel exfel_anaconda3
+module load anaconda3
+source activate ${SHARED_FOLDER}/env
+
 # Add the generic hummingbird to path
-export PATH=/gpfs/exfel/exp/SQS/202131/p900210/usr/Shared/hummingbird:$PATH
+export PATH=${SHARED_FOLDER}/hummingbird:$PATH
+
 # Also add the user specific hummingbird path in case it exists
-export PATH=/gpfs/exfel/exp/SQS/202131/p900210/usr/Shared/$USER/hummingbird:$PATH
+export PATH=${SHARED_FOLDER}/${USER}/hummingbird:$PATH
