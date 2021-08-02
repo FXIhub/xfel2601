@@ -1,11 +1,14 @@
 #!/bin/bash
 
-SHARED_FOLDER=/gpfs/exfel/exp/SQS/202131/p900210/usr/Shared
+SHARED_FOLDER=/gpfs/exfel/exp/SQS/202102/p002601/usr/Shared
 
 # Load modules and environment
 #module load exfel exfel_anaconda3
 module load anaconda3
+# Don't change prompt too much
+OLD_PS1=${PS1}
 source activate ${SHARED_FOLDER}/env
+export PS1="(hummingbird) ${OLD_PS1}"
 
 # Add the generic hummingbird to path
 export PATH=${SHARED_FOLDER}/hummingbird:$PATH
