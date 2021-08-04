@@ -1,0 +1,1 @@
+g++ -shared -std=c++11 -fPIC $(python -m pybind11 --includes) cpplib.cpp -o cpplib$(python-config --extension-suffix)
