@@ -15,3 +15,6 @@ export PATH=${SHARED_FOLDER}/hummingbird:$PATH
 
 # Also add the user specific hummingbird path in case it exists
 export PATH=${SHARED_FOLDER}/${USER}/hummingbird:$PATH
+
+# This variable stops complaints about CUDA not being found by mpirun
+export MPI_MCA_btl_openib_warn_no_device_params_found=0
