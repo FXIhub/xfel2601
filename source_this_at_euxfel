@@ -5,6 +5,7 @@ SHARED_FOLDER=/gpfs/exfel/exp/SQS/202102/p002601/usr/Shared
 # Load modules and environment
 #module load exfel exfel_anaconda3
 module load anaconda3
+
 # Don't change prompt too much
 OLD_PS1=${PS1}
 source activate ${SHARED_FOLDER}/env
@@ -19,3 +20,6 @@ export PATH=${SHARED_FOLDER}/${USER}/hummingbird:$PATH
 # This variable stops complaints about CUDA not being found by mpirun
 #export MPI_MCA_btl_openib_warn_no_device_params_found=0
 export OMPI_MCA_mpi_cuda_support=0
+
+# Add dragonfly stuff to modulepath 
+export MODULEPATH=/home/ayyerkar/.local/modules:$MODULEPATH
