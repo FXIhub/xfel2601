@@ -87,7 +87,7 @@ for idx in idxs[15:]:
    ass,_ = geom.position_modules_fast(data)
    plt.title("Hitscore")
 
-   axs[0].imshow(ass,vmax=10,vmin=0,aspect=177/204.38)
+   axs[0].imshow(ass[300:900,300:800],norm=colors.LogNorm(vmin=2),aspect=177/204.38)
 
    radavg = get_radavg(intrad, data, mask)
    corr = np.corrcoef((radavg*qvals**4)[40:140], smodels)[0,1:]
