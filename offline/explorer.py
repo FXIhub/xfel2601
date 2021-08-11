@@ -13,9 +13,9 @@ import numpy as np
 import pylab as P
 import h5py
 
-PREFIX = '/gpfs/exfel/exp/SQS/202102/p002601/'
+PREFIX = '/gpfs/exfel/exp/SQS/202102/p002601/scratch/'
 
-sys.path.append(PREFIX+'scratch/det')
+sys.path.append(PREFIX+'det')
 
 class Explorer():
     def __init__(self, run, geom_file='geom_00'):
@@ -31,7 +31,7 @@ class Explorer():
         self.run_num = run
         if self._fvds is not None:
             self._fvds.close()
-        self._fvds = h5py.File(PREFIX+'/vds/r%.4d.cxi'%run, 'r')
+        self._fvds = h5py.File(PREFIX+'vds/r%.4d.cxi'%run, 'r')
         self._dset = self._fvds['entry_1/instrument_1/detector_1/data']
         print('VDS data set shape:', self._dset.shape)
 
