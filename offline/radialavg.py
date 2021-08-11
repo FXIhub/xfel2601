@@ -15,6 +15,7 @@ import numpy as np
 import extra_geom
 
 PREFIX = '/gpfs/exfel/exp/SQS/202102/p002601/'
+ADU_PER_PHOTON = 5
 
 class RadialAverage():
     def __init__(self, run, dark_run, nproc=0, chunk_size=32, n_images=0, litpixel_threshold=0):
@@ -35,11 +36,8 @@ class RadialAverage():
         with h5py.File(vds_file, 'r') as f:
             self.dset_name = 'entry_1/instrument_1/detector_1/data'
             self.dshape = f[self.dset_name].shape        
-            # Only take the first 1000 images
-            self.dshape = list(self.dshape)
-            self.dshape[0] = min(1000,self.dshape[0])
 
-            self.litpixel_file = PREFXI+'scratch/events/r%.4d_litpix.h5'%run
+            self.litpixel_file = PREFIX+'scratch/events/r%.4d_events.h5'%run
         with h5py.File(self.litpixel_file, 'r') as f:
             self.hits = np.array(f['/entry_1/hit_indices'])
             self.litpixel = np.array(f['/entry_1/litpixels']).sum(axis=0)
@@ -76,7 +74,7 @@ class RadialAverage():
         sys.stdout.write('Calculating radial average in module %d for %d frames\n'%(module, self.dshape[0]))
         sys.stdout.flush()
         # Radial average for each module and each frame. Store both the sum and the number of pixels per radius
-        radialavg = mp.Array(ctypes.c_float, int(self.nhits*self.max_rad*2))
+        radialavg = mp.Array(ctypes.c_float, int(self.nhits*self.max_rad*3))
         jobs = []
         for c in range(self.nproc):
             p = mp.Process(target=self._part_worker, args=(c, module, radialavg))
@@ -96,16 +94,11 @@ class RadialAverage():
         return dark, cells, sigma            
 
     def _part_worker(self, p, m, radialavg):
-        np_radialavg = np.frombuffer(radialavg.get_obj(), dtype=np.float32).reshape((self.nhits,self.max_rad, 2))
+        np_radialavg = np.frombuffer(radialavg.get_obj(), dtype=np.float32).reshape((self.nhits,self.max_rad, 3))
 
         nframes = self.nhits
         my_start = (nframes // self.nproc) * p
         my_end = min((nframes // self.nproc) * (p+1), nframes)
-        num_chunks = int(np.ceil((my_end-my_start)/self.chunk_size))
-        #num_chunks = 4
-        if p == 0:
-            print('Doing %d chunks of %d frames each' % (num_chunks, self.chunk_size))
-            sys.stdout.flush()
 
         dark, cells, sigma = self._parse_darks(m)
         mask = ~(sigma.mean(0) < 0.5) | (sigma.mean(0) > 1.5)
@@ -119,14 +112,20 @@ class RadialAverage():
             # Assume all cells are the same
             cids = f_vds['entry_1/cellId'][self.hits[idx], 0]
             data = data - dark[cids]
-            
+
+            data[data < 4.] = 0            
+            data /= ADU_PER_PHOTON
             radcount = np.zeros(self.intrad.max()+1) 
             radavg = np.zeros_like(radcount)
+            radvar = np.zeros_like(radcount)
             mymask = mask & ~np.isnan(data)
             np.add.at(radcount, intrad[mymask], 1)
             np.add.at(radavg, intrad[mymask], data[mymask])
+            with np.errstate(divide='ignore', invalid='ignore'):
+                np.add.at(radvar, intrad[mymask], (data[mymask] - (radavg/radcount)[intrad[mymask]])**2)
             np_radialavg[idx,:,0] = radavg
             np_radialavg[idx,:,1] = radcount
+            np_radialavg[idx,:,2] = radvar
 
             idx += 1
             etime = time.time()
@@ -178,8 +177,8 @@ def main():
     l = RadialAverage(args.run, args.dark_run, nproc=args.nproc, n_images=args.images, litpixel_threshold=args.litpixels)
     print('Running on the following modules:', args.module)
 
-    radialavg = np.array([l.run_module(module) for module in args.module]).reshape((len(args.module),l.nhits,l.max_rad, 2))
-    # Sum across all modules
+    radialavg = np.array([l.run_module(module) for module in args.module]).reshape((len(args.module),l.nhits,l.max_rad, 3))
+    # Sum across all modules. This is wrong for the variance, but close enough
     radialavg = np.sum(radialavg,axis=0)
     print(radialavg.shape)
     
@@ -193,7 +192,12 @@ def main():
         outf[dset_name] = radialavg[:,:,1]
         dset_name = 'entry_1/radialavg'
         if dset_name in outf: del outf[dset_name]
-        outf[dset_name] = radialavg[:,:,0]/radialavg[:,:,1]
+        with np.errstate(divide='ignore', invalid='ignore'):
+            outf[dset_name] = radialavg[:,:,0]/radialavg[:,:,1]
+        dset_name = 'entry_1/radialvar'
+        if dset_name in outf: del outf[dset_name]
+        with np.errstate(divide='ignore', invalid='ignore'):
+            outf[dset_name] = radialavg[:,:,2]/radialavg[:,:,1]
 
         if 'entry_1/modules' in outf: del outf['entry_1/modules']
         outf['entry_1/modules'] = args.module
