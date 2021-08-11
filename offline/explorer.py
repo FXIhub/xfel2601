@@ -13,17 +13,17 @@ import numpy as np
 import pylab as P
 import h5py
 
-PREFIX = '/gpfs/exfel/exp/SQS/202102/p002601/'
+PREFIX = '/gpfs/exfel/exp/SQS/202102/p002601/scratch/'
 
-sys.path.append(PREFIX+'scratch/det')
+sys.path.append(PREFIX+'det')
 
 class Explorer():
     def __init__(self, run, geom_file='geom_00'):
         self._fvds = None
         self.open_run(run)
 
-        geom = importlib.import_module(geom_file).get_geom()
-        x, y, _ = geom.get_pixel_positions().transpose(3,0,1,2) / 236e-6
+        self.geom = importlib.import_module(geom_file).get_geom()
+        x, y, _ = self.geom.get_pixel_positions().transpose(3,0,1,2) / 236e-6
         self.intrad = np.sqrt(x*x + y*y).astype('i4')
         self.radcount = np.zeros(self.intrad.max()+1)
 
@@ -31,7 +31,7 @@ class Explorer():
         self.run_num = run
         if self._fvds is not None:
             self._fvds.close()
-        self._fvds = h5py.File(PREFIX+'/vds/r%.4d.cxi'%run, 'r')
+        self._fvds = h5py.File(PREFIX+'vds/r%.4d.cxi'%run, 'r')
         self._dset = self._fvds['entry_1/instrument_1/detector_1/data']
         print('VDS data set shape:', self._dset.shape)
 
@@ -112,6 +112,6 @@ class Explorer():
 
     def plot_frame(self, i, vmin=-3, vmax=10, cmod=False):
         frame = self.get_corr(i, cmod=cmod)
-        assem, cen = geom.position_modules_fast(frame)
+        assem, cen = self.geom.position_modules_fast(frame)
         P.imshow(assem[:,::-1], origin='lower', aspect=assem.shape[1]/assem.shape[0]*np.sqrt(3)/2, vmin=vmin, vmax=vmax)
         P.gca().set_facecolor('dimgray')
