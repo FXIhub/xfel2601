@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import argparse
 import multiprocessing as mp
@@ -10,7 +11,7 @@ from scipy import optimize
 import dragonfly
 
 PREFIX = '/gpfs/exfel/exp/SQS/202102/p002601/scratch/'
-NCELLS = 321
+NCELLS = 400
 ADU_PER_PHOTON = 5.
 
 parser = argparse.ArgumentParser(description='Save hits to emc file')
@@ -56,6 +57,7 @@ with h5py.File(PREFIX+'dark/r%.4d_dark.h5'%args.dark_run, 'r') as f:
 # Save hits for modules
 def worker(module):
     wemc = dragonfly.EMCWriter(PREFIX+'emc/r%.4d_m%.2d.emc' % (args.run, module), 128*512, hdf5=False)
+    sys.stdout.flush()
     
     f = h5py.File(PREFIX+'vds/r%.4d.cxi' % args.run, 'r')
     dset = f['entry_1/instrument_1/detector_1/data']
@@ -81,6 +83,7 @@ def worker(module):
 jobs = [mp.Process(target=worker, args=(m,)) for m in range(16)]
 [j.start() for j in jobs]
 [j.join() for j in jobs]
+sys.stdout.flush()
 
 # Merge modules
 print('Merging modules')
@@ -100,5 +103,10 @@ sys.stderr.write('\n')
 sys.stderr.flush()
 
 wemc.finish_write()
+
+# Delete module-wise files
+mod_fnames = [PREFIX+'emc/r%.4d_m%.2d.emc' % (args.run, m) for m in range(16)]
+[os.remove(fname) for fname in mod_fnames]
+print('Deleted module-wise files')
 
 print('DONE')

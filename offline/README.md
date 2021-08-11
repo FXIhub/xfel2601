@@ -20,8 +20,7 @@ The SLURM scripts in `offline/slurm/` are to be run in the following order on a 
  
 For dark runs:
 
- 1. `vds_array.sh`
- 2. `proc_darks_array.sh` - Generate dark calibration constants
+ 1. `proc_darks_array.sh` - Generate dark calibration constants (no VDS needed)
 
 The dark runs need to be processed before running any of the steps past Step 2 for signal runs
 

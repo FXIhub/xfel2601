@@ -8,6 +8,7 @@ Use appropriate matplotlib magic command for plotting
 import sys
 import importlib
 import itertools
+import warnings
 
 import numpy as np
 import pylab as P
@@ -60,12 +61,12 @@ class Explorer():
     def get_radavg(self, data):
         self.radcount[:] = 0.
         radavg = np.zeros_like(self.radcount)
-        mymask = self.mask & ~np.isnan(data)
-        np.add.at(radcount, intrad[mymask], 1)
-        np.add.at(radavg, intrad[mymask], data[mymask])
+        mymask = ~self.mask & ~np.isnan(data)
+        np.add.at(self.radcount, self.intrad[mymask], 1)
+        np.add.at(radavg, self.intrad[mymask], data[mymask])
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            return radavg / radcount
+            return radavg / self.radcount
 
     @staticmethod
     def _iterating_median(v, tol=3):
