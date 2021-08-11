@@ -22,8 +22,8 @@ class Explorer():
         self._fvds = None
         self.open_run(run)
 
-        geom = importlib.import_module(geom_file).get_geom()
-        x, y, _ = geom.get_pixel_positions().transpose(3,0,1,2) / 236e-6
+        self.geom = importlib.import_module(geom_file).get_geom()
+        x, y, _ = self.geom.get_pixel_positions().transpose(3,0,1,2) / 236e-6
         self.intrad = np.sqrt(x*x + y*y).astype('i4')
         self.radcount = np.zeros(self.intrad.max()+1)
 
@@ -112,6 +112,6 @@ class Explorer():
 
     def plot_frame(self, i, vmin=-3, vmax=10, cmod=False):
         frame = self.get_corr(i, cmod=cmod)
-        assem, cen = geom.position_modules_fast(frame)
+        assem, cen = self.geom.position_modules_fast(frame)
         P.imshow(assem[:,::-1], origin='lower', aspect=assem.shape[1]/assem.shape[0]*np.sqrt(3)/2, vmin=vmin, vmax=vmax)
         P.gca().set_facecolor('dimgray')
