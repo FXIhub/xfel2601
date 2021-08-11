@@ -24,7 +24,7 @@ For dark runs:
 
 For sucrose runs:
 
-After having run litpixels_array.sh on a sucrose run you can do the following steps for a size of fluence estimate from the hits:
+After having run `litpixels_array.sh` on a sucrose run you can do the following steps for a size of fluence estimate from the hits:
 
  1. `radialavg_array.sh` - Calculates radial averages for all the hits.
  2. `sizing_fast.sh` - Fit sizes and estimate fluences and anisotropy (lack of sphericity) for all the hits.
