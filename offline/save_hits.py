@@ -12,6 +12,7 @@ import dragonfly
 
 PREFIX = '/gpfs/exfel/exp/SQS/202102/p002601/scratch/'
 NCELLS = 400
+NPULSES = 100
 ADU_PER_PHOTON = 5.
 
 parser = argparse.ArgumentParser(description='Save hits to emc file')
@@ -23,8 +24,12 @@ args = parser.parse_args()
 # Get lit pixels
 with h5py.File(PREFIX+'events/r%.4d_events.h5'%args.run, 'r') as f:
     litpix = f['entry_1/litpixels'][:].sum(0)
-sel_litpix = litpix.reshape(-1,NCELLS)[:,::4]
-sel_ind = np.add.outer(np.arange(sel_litpix.shape[0]) * NCELLS, np.arange(0, NCELLS, 4)).ravel()
+
+#sel_litpix = litpix.reshape(-1,NCELLS)[:,::4]
+#sel_ind = np.add.outer(np.arange(sel_litpix.shape[0]) * NCELLS, np.arange(0, NCELLS, 4)).ravel()
+sel_litpix = litpix.reshape(-1,NCELLS)[:,:NPULSES]
+sel_ind = np.add.outer(np.arange(sel_litpix.shape[0]) * NCELLS, np.arange(NPULSES)).ravel()
+
 sel_litpix = sel_litpix.ravel()
 
 # Get hit indices
@@ -32,9 +37,10 @@ def gaussian(x, a, x0, sigma):
     return a * np.exp(-(x-x0)**2 / 2 / sigma**2)
 
 if args.thresh == -1:
-    hy, hx = np.histogram(sel_litpix, np.arange(0, 4e4, 100))
+    hy, hx = np.histogram(sel_litpix, np.arange(0, 65600, 100))
     hcen = 0.5*(hx[1:] + hx[:-1])
-    popt, pcov = optimize.curve_fit(gaussian, hcen[:hy.argmax()], hy[:hy.argmax()], p0=(hy.max(), hy.argmax(), 1000))
+    xmax = hy[1:].argmax() + 1 # Ignoring first bin
+    popt, pcov = optimize.curve_fit(gaussian, hcen[1:xmax], hy[1:xmax], p0=(hy.max(), xmax, 1000))
     args.thresh = popt[1] + 3*popt[2]
     print('Fitted background Gaussian: %.3f +- %.3f' % (popt[1], popt[2]))
 
@@ -45,7 +51,7 @@ print('%d hits using a threshold of %.3f' % (len(hit_inds), args.thresh))
 with h5py.File(PREFIX+'events/r%.4d_events.h5'%args.run, 'a') as f:
     if 'entry_1/is_hit' in f:
         del f['entry_1/is_hit']
-    if 'entry_1/hit_inds' in f:
+    if 'entry_1/hit_indices' in f:
         del f['entry_1/hit_indices']
     f['entry_1/hit_indices'] = hit_inds
 
