@@ -22,6 +22,13 @@ For dark runs:
 
  1. `proc_darks_array.sh` - Generate dark calibration constants (no VDS needed)
 
+For sucrose runs:
+
+After having run `litpixels_array.sh` on a sucrose run you can do the following steps for a size of fluence estimate from the hits:
+
+ 1. `radialavg_array.sh` - Calculates radial averages for all the hits.
+ 2. `sizing_fast.sh` - Fit sizes and estimate fluences and anisotropy (lack of sphericity) for all the hits.
+
 The dark runs need to be processed before running any of the steps past Step 2 for signal runs
 
 ## Data explorer
